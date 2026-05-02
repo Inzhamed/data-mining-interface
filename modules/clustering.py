@@ -12,6 +12,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.decomposition import PCA
+
+plt.style.use('dark_background')
+plt.rcParams.update({
+    'figure.facecolor': '#1a1a2e',
+    'axes.facecolor': '#16213e',
+    'savefig.facecolor': '#1a1a2e',
+    'grid.color': '#2d2d5e',
+    'axes.edgecolor': '#3a3a6e',
+})
 from sklearn.metrics import silhouette_score
 
 

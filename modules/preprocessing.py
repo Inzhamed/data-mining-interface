@@ -12,6 +12,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from io import StringIO
 
+plt.style.use('dark_background')
+plt.rcParams.update({
+    'figure.facecolor': '#1a1a2e',
+    'axes.facecolor': '#16213e',
+    'savefig.facecolor': '#1a1a2e',
+    'grid.color': '#2d2d5e',
+    'axes.edgecolor': '#3a3a6e',
+})
+
 
 # ---------------------------------------------------------------------------
 # 1. Importation

@@ -3,6 +3,8 @@ Application principale – Interface Fouille de Données
 Lancer avec : streamlit run app.py
 """
 
+import html
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -49,21 +51,435 @@ from modules.classification import (
 # ---------------------------------------------------------------------------
 
 st.set_page_config(
-    page_title="Fouille de Données",
-    page_icon="🔍",
+    page_title="InzLab",
+    page_icon="⬡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ---------------------------------------------------------------------------
-# CSS léger pour améliorer le rendu
+# CSS — Glassmorphism dark theme
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
-    .main-title {font-size: 2rem; font-weight: 700; color: #1f4e79;}
-    .section-header {font-size: 1.2rem; font-weight: 600; color: #2e75b6; margin-top: 1rem;}
-    .metric-card {background:#f0f4f8; border-radius:8px; padding:12px; text-align:center;}
-    div[data-testid="stMetric"] {background:#f0f4f8; border-radius:8px; padding:8px;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
+[data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] *,
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] *,
+button, input, textarea, select {
+    font-family: 'Inter', sans-serif !important;
+}
+
+[data-testid="stIconMaterial"] {
+    font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    direction: ltr !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    -webkit-font-smoothing: antialiased !important;
+}
+
+/* ── Background ── */
+.stApp {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #24243e 100%) !important;
+    min-height: 100vh;
+}
+[data-testid="stMain"], .block-container, section.main { background: transparent !important; }
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background:
+        radial-gradient(circle at top left, rgba(92, 117, 255, 0.20), transparent 32%),
+        linear-gradient(180deg, rgba(8, 10, 28, 0.98), rgba(13, 16, 39, 0.94)) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.04) !important;
+}
+[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+    padding-top: 0.4rem !important;
+}
+
+/* ── Top bar ── */
+header[data-testid="stHeader"] {
+    background: rgba(8,6,25,0.90) !important;
+    backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* ── Glass cards (expanders) ── */
+[data-testid="stExpander"] {
+    background: linear-gradient(180deg, rgba(41,45,98,0.72), rgba(35,38,86,0.56)) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(167,139,250,0.18) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 18px 38px rgba(7,8,24,0.32), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    margin-bottom: 1.1rem !important;
+    overflow: hidden !important;
+}
+[data-testid="stExpander"] details {
+    border: none !important;
+}
+[data-testid="stExpander"] details > summary {
+    padding: 0.9rem 1.1rem !important;
+    background: linear-gradient(180deg, rgba(12,14,36,0.88), rgba(24,27,61,0.72)) !important;
+    border-bottom: 1px solid rgba(167,139,250,0.14) !important;
+}
+[data-testid="stExpander"] details > summary > span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.65rem !important;
+}
+[data-testid="stExpander"] details > summary:hover {
+    background: linear-gradient(180deg, rgba(18,20,48,0.94), rgba(30,33,72,0.78)) !important;
+}
+[data-testid="stExpander"] details > summary p {
+    color: rgba(255,255,255,0.92) !important;
+    font-weight: 600 !important;
+    font-size: 0.97rem !important;
+    margin: 0 !important;
+}
+[data-testid="stExpander"] details > summary [data-testid="stIconMaterial"] {
+    color: rgba(255,255,255,0.78) !important;
+}
+[data-testid="stExpanderDetails"] {
+    background: transparent !important;
+}
+
+/* ── Text ── */
+p, li { color: rgba(255,255,255,0.80) !important; }
+h1,h2,h3,h4 { color: #ffffff !important; }
+label { color: rgba(255,255,255,0.80) !important; }
+small, [data-testid="stCaptionContainer"] p { color: rgba(255,255,255,0.45) !important; }
+
+/* ── Metrics ── */
+[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 14px !important;
+    padding: 1rem 1.1rem !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.30) !important;
+}
+[data-testid="stMetricValue"] {
+    color: #c4b5fd !important;
+    font-weight: 700 !important;
+    font-size: 1.75rem !important;
+}
+[data-testid="stMetricLabel"] {
+    color: rgba(255,255,255,0.50) !important;
+    font-size: 0.80rem !important;
+}
+
+/* ── Buttons ── */
+.stButton > button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.45rem 1.4rem !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 14px rgba(102,126,234,0.40) !important;
+    transition: transform 0.20s, box-shadow 0.20s !important;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 7px 22px rgba(102,126,234,0.58) !important;
+}
+.stButton > button:active { transform: translateY(0) !important; }
+.stButton > button:disabled {
+    background: rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.28) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* ── Inputs ── */
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stMultiSelect"] > div > div {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 10px !important;
+}
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 10px !important;
+    color: rgba(255,255,255,0.88) !important;
+}
+
+/* ── Tabs ── */
+[data-testid="stTabs"] [role="tablist"] {
+    background: rgba(255,255,255,0.04) !important;
+    border-radius: 12px !important;
+    padding: 5px !important;
+    gap: 8px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    align-items: center !important;
+}
+[data-testid="stTabs"] button[role="tab"] {
+    color: rgba(255,255,255,0.55) !important;
+    border-radius: 9px !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0.7rem 1rem !important;
+    min-height: 44px !important;
+}
+[data-testid="stTabs"] button[role="tab"] p {
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+    background: rgba(118,75,162,0.30) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* ── File uploader ── */
+[data-testid="stFileUploader"] section {
+    background: rgba(255,255,255,0.025) !important;
+    border: 2px dashed rgba(167,139,250,0.40) !important;
+    border-radius: 14px !important;
+    transition: border-color 0.2s !important;
+}
+[data-testid="stFileUploader"] section:hover {
+    border-color: rgba(167,139,250,0.72) !important;
+}
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] span,
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] div {
+    color: rgba(255,255,255,0.55) !important;
+}
+[data-testid="stFileUploader"] [data-testid="stWidgetLabel"] p {
+    color: rgba(255,255,255,0.90) !important;
+    font-weight: 600 !important;
+}
+
+/* ── DataFrames ── */
+[data-testid="stDataFrame"] > div {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    overflow: hidden !important;
+}
+
+/* ── Comparison table ── */
+.comparison-table-wrap {
+    margin: 0.55rem 0 1rem 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow-x: auto;
+    background: rgba(12, 14, 36, 0.38);
+}
+.comparison-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.comparison-table thead th {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.62);
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.comparison-table tbody td {
+    padding: 0.9rem 1rem;
+    color: rgba(255,255,255,0.84);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.comparison-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.comparison-table .model-cell {
+    font-weight: 600;
+    color: rgba(255,255,255,0.96);
+}
+.comparison-table .metric-cell {
+    font-variant-numeric: tabular-nums;
+}
+.comparison-table .is-best {
+    background: linear-gradient(135deg, rgba(167,139,250,0.26), rgba(102,126,234,0.18));
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(167,139,250,0.22);
+}
+
+/* ── Alerts ── */
+div[data-testid="stAlert"] { border-radius: 12px !important; }
+
+/* ── File uploader browse button (prevent double text) ── */
+[data-testid="stFileUploaderDropzone"] button,
+[data-testid="stFileUploader"] button {
+    background: rgba(167,139,250,0.12) !important;
+    color: rgba(255,255,255,0.85) !important;
+    border: 1px solid rgba(167,139,250,0.35) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    transform: none !important;
+    font-size: 0.85rem !important;
+}
+[data-testid="stFileUploaderDropzone"] button:hover,
+[data-testid="stFileUploader"] button:hover {
+    border-color: rgba(167,139,250,0.65) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(167,139,250,0.62); }
+
+/* ── Page headers ── */
+.page-header { padding: 0.25rem 0 1.25rem 0; }
+.page-title-row { display:flex; align-items:center; gap:0.55rem; margin-bottom:0.25rem; }
+h1.page-title {
+    font-size: 2.1rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    background: linear-gradient(130deg, #ffffff 20%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15 !important;
+}
+.page-subtitle {
+    color: rgba(255,255,255,0.42) !important;
+    font-size: 0.875rem !important;
+    margin: 0 0 0.4rem 0 !important;
+    font-weight: 400 !important;
+    -webkit-text-fill-color: rgba(255,255,255,0.42) !important;
+}
+.title-bar {
+    height: 2px; width: 52px;
+    background: linear-gradient(90deg, #a78bfa, #667eea);
+    border-radius: 99px;
+}
+
+/* ── Sidebar brand & navigation ── */
+.sidebar-hero {
+    padding: 0.45rem 0 1rem 0;
+}
+.brand-eyebrow {
+    font-size: 0.68rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgba(161, 174, 209, 0.60) !important;
+    -webkit-text-fill-color: rgba(161, 174, 209, 0.60) !important;
+    margin-bottom: 0.45rem;
+}
+.brand-wordmark {
+    font-size: 1.7rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.04em;
+    line-height: 1 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+.brand-tag {
+    margin-top: 0.55rem;
+    max-width: 15rem;
+    font-size: 0.76rem !important;
+    line-height: 1.5;
+    color: rgba(203, 213, 225, 0.56) !important;
+    -webkit-text-fill-color: rgba(203, 213, 225, 0.56) !important;
+}
+.brand-divider {
+    height: 1px;
+    margin: 0.95rem 0 0.95rem 0;
+    background: linear-gradient(90deg, rgba(96, 165, 250, 0.55), rgba(167, 139, 250, 0.22), transparent);
+}
+.sidebar-section-title {
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(161, 174, 209, 0.58) !important;
+    -webkit-text-fill-color: rgba(161, 174, 209, 0.58) !important;
+}
+.sidebar-section-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.78rem !important;
+    color: rgba(255,255,255,0.42) !important;
+    -webkit-text-fill-color: rgba(255,255,255,0.42) !important;
+}
+.sidebar-chip-row {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+}
+.sidebar-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.34rem 0.58rem;
+    border-radius: 999px;
+    font-size: 0.70rem !important;
+    color: rgba(226,232,240,0.78) !important;
+    -webkit-text-fill-color: rgba(226,232,240,0.78) !important;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.14);
+}
+[data-testid="stSidebar"] [role="radiogroup"] {
+    display: grid !important;
+    gap: 0.55rem !important;
+    margin-top: 0.45rem !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] {
+    display: block !important;
+    margin: 0 !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child {
+    display: none !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] input {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] input + div {
+    width: 100% !important;
+    padding: 0.88rem 0.95rem !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(148,163,184,0.12) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02)) !important;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"]:hover input + div {
+    transform: translateX(2px) !important;
+    border-color: rgba(129, 140, 248, 0.26) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)) !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] input:checked + div {
+    border-color: rgba(125, 211, 252, 0.28) !important;
+    background: linear-gradient(135deg, rgba(70, 92, 214, 0.44), rgba(84, 160, 255, 0.18)) !important;
+    box-shadow: 0 10px 24px rgba(30, 41, 89, 0.34), inset 0 0 0 1px rgba(191, 219, 254, 0.08) !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] p {
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: rgba(226,232,240,0.80) !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] input:checked + div p {
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] label[data-baseweb="radio"] input:focus + div {
+    box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.18), 0 0 0 4px rgba(99, 102, 241, 0.16) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,46 +498,76 @@ def init_state():
         if k not in st.session_state:
             st.session_state[k] = v
 
+
+def render_comparison_table(summary_df: pd.DataFrame, display_cols: list[str]):
+    metric_cols = [col for col in display_cols if col != "Modèle"]
+    display_df = summary_df[display_cols].copy()
+    best_values = {
+        col: display_df[col].max(skipna=True) for col in metric_cols
+    }
+
+    header_html = "".join(
+        f"<th>{html.escape(col)}</th>" for col in display_cols
+    )
+
+    row_html = []
+    for _, row in display_df.iterrows():
+        cells = [
+            f'<td class="model-cell">{html.escape(str(row["Modèle"]))}</td>'
+        ]
+        for col in metric_cols:
+            value = row[col]
+            best_value = best_values[col]
+            formatted_value = "-" if pd.isna(value) else f"{float(value):.4f}"
+            classes = "metric-cell"
+            if pd.notna(value) and pd.notna(best_value) and np.isclose(float(value), float(best_value)):
+                classes += " is-best"
+            cells.append(f'<td class="{classes}">{formatted_value}</td>')
+        row_html.append(f"<tr>{''.join(cells)}</tr>")
+
+    table_html = (
+        '<div class="comparison-table-wrap">'
+        '<table class="comparison-table">'
+        f'<thead><tr>{header_html}</tr></thead>'
+        f'<tbody>{"".join(row_html)}</tbody>'
+        '</table>'
+        '</div>'
+    )
+    st.markdown(table_html, unsafe_allow_html=True)
+
 init_state()
 
 # ---------------------------------------------------------------------------
 # Barre latérale – Navigation
 # ---------------------------------------------------------------------------
 
-st.sidebar.markdown("## 🔍 Fouille de Données")
-st.sidebar.markdown("---")
+st.sidebar.markdown(
+    '<div class="sidebar-hero">'
+    '<div class="brand-eyebrow">Data Mining Workspace</div>'
+    '<div class="brand-wordmark">InzLab</div>'
+    '<div class="brand-divider"></div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 page = st.sidebar.radio(
     "Navigation",
-    ["📂 Prétraitement", "🔵 Clustering", "🎯 Classification"],
+    ["Prétraitement", "Clustering", "Classification"],
     index=0,
+    label_visibility="collapsed",
 )
-st.sidebar.markdown("---")
-
-# Indicateur d'état
-if st.session_state.df_raw is not None:
-    df = st.session_state.df_raw
-    st.sidebar.success(f"✅ Dataset chargé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
-    if st.session_state.df_clean is not None:
-        dfc = st.session_state.df_clean
-        st.sidebar.info(f"🧹 Données nettoyées : {dfc.shape[0]} × {dfc.shape[1]}")
-else:
-    st.sidebar.warning("⚠️ Aucun dataset chargé")
-
-st.sidebar.markdown("---")
-st.sidebar.caption("Mini-Projet Fouille de Données · 2025-2026")
 
 
 # ===========================================================================
 # VOLET 1 – PRÉTRAITEMENT
 # ===========================================================================
 
-if page == "📂 Prétraitement":
-    st.markdown('<p class="main-title">📂 Volet 1 · Prétraitement</p>', unsafe_allow_html=True)
+if page == "Prétraitement":
+    st.markdown('<div class="page-header"><h1 class="page-title">Prétraitement</h1><p class="page-subtitle">Chargement · Exploration · Nettoyage · Normalisation</p><div class="title-bar"></div></div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------------------------
     # 1.1 Importation
     # -----------------------------------------------------------------------
-    with st.expander("📥 Importation du dataset", expanded=True):
+    with st.expander("Importation du dataset", expanded=True):
         uploaded = st.file_uploader(
             "Charger un fichier CSV ou Excel",
             type=["csv", "xlsx", "xls"],
@@ -134,12 +580,12 @@ if page == "📂 Prétraitement":
                 st.session_state.df_clean = df.copy()
                 st.session_state.feature_cols = list(df.select_dtypes(include=[np.number]).columns)
                 st.session_state.target_col = None
-                st.success(f"✅ Fichier chargé : {df.shape[0]} lignes, {df.shape[1]} colonnes")
+                st.success(f"Fichier chargé : {df.shape[0]} lignes, {df.shape[1]} colonnes")
             except Exception as e:
                 st.error(f"Erreur lors du chargement : {e}")
 
     if st.session_state.df_raw is None:
-        st.info("👆 Chargez un fichier pour commencer.")
+        st.info("Chargez un fichier pour commencer.")
         st.stop()
 
     df_raw = st.session_state.df_raw
@@ -148,7 +594,7 @@ if page == "📂 Prétraitement":
     # -----------------------------------------------------------------------
     # 1.2 Exploration
     # -----------------------------------------------------------------------
-    with st.expander("🔎 Exploration des données", expanded=True):
+    with st.expander("Exploration des données", expanded=True):
         tab_apercu, tab_stats, tab_types = st.tabs(["Aperçu", "Statistiques descriptives", "Types & Valeurs manquantes"])
 
         with tab_apercu:
@@ -177,7 +623,7 @@ if page == "📂 Prétraitement":
     # -----------------------------------------------------------------------
     # 1.3 Nettoyage
     # -----------------------------------------------------------------------
-    with st.expander("🧹 Nettoyage des données"):
+    with st.expander("Nettoyage des données"):
         col_a, col_b = st.columns(2)
 
         with col_a:
@@ -203,7 +649,7 @@ if page == "📂 Prétraitement":
                 try:
                     df_work = handle_missing(df_work, miss_strategy, fill_val)
                     st.session_state.df_clean = df_work
-                    st.success(f"✅ Nettoyage appliqué. Dataset : {df_work.shape}")
+                    st.success(f"Nettoyage appliqué. Dataset : {df_work.shape}")
                 except Exception as e:
                     st.error(str(e))
 
@@ -214,12 +660,12 @@ if page == "📂 Prétraitement":
             if st.button("Supprimer les doublons", key="btn_rm_dup", disabled=(n_dup == 0)):
                 df_work = remove_duplicates(df_work)
                 st.session_state.df_clean = df_work
-                st.success(f"✅ Doublons supprimés. Dataset : {df_work.shape}")
+                st.success(f"Doublons supprimés. Dataset : {df_work.shape}")
 
     # -----------------------------------------------------------------------
     # 1.4 Normalisation
     # -----------------------------------------------------------------------
-    with st.expander("⚖️ Normalisation"):
+    with st.expander("Normalisation"):
         num_cols = list(df_work.select_dtypes(include=[np.number]).columns)
         if not num_cols:
             st.warning("Aucune colonne numérique disponible.")
@@ -235,7 +681,7 @@ if page == "📂 Prétraitement":
             target_for_norm = st.session_state.target_col
             normable_cols = [c for c in num_cols if c != target_for_norm]
             if target_for_norm and target_for_norm in num_cols:
-                st.info(f"ℹ️ La variable cible **{target_for_norm}** est exclue des colonnes normalisables.")
+                st.info(f"La variable cible **{target_for_norm}** est exclue des colonnes normalisables.")
             cols_to_norm = st.multiselect(
                 "Colonnes à normaliser",
                 normable_cols,
@@ -248,13 +694,13 @@ if page == "📂 Prétraitement":
                 else:
                     df_work = normalize(df_work, norm_method, cols_to_norm)
                     st.session_state.df_clean = df_work
-                    st.success(f"✅ Normalisation appliquée ({norm_method}) sur {len(cols_to_norm)} colonnes.")
+                    st.success(f"Normalisation appliquée ({norm_method}) sur {len(cols_to_norm)} colonnes.")
                     st.dataframe(df_work[cols_to_norm].head(5), use_container_width=True)
 
     # -----------------------------------------------------------------------
     # 1.5 Visualisation
     # -----------------------------------------------------------------------
-    with st.expander("📊 Visualisation"):
+    with st.expander("Visualisation"):
         num_cols_viz = list(df_work.select_dtypes(include=[np.number]).columns)
         all_cols = list(df_work.columns)
 
@@ -303,7 +749,7 @@ if page == "📂 Prétraitement":
     # -----------------------------------------------------------------------
     # 1.6 Sélection des features & cible (persistée pour les autres volets)
     # -----------------------------------------------------------------------
-    with st.expander("⚙️ Sélection des features et de la variable cible", expanded=True):
+    with st.expander("Sélection des features et de la variable cible", expanded=True):
         all_cols_clean = list(df_work.columns)
         num_cols_clean = list(df_work.select_dtypes(include=[np.number]).columns)
 
@@ -322,15 +768,15 @@ if page == "📂 Prétraitement":
             key="target_select",
         )
 
-        if st.button("💾 Enregistrer la sélection", key="btn_save_cols"):
+        if st.button("Enregistrer la sélection", key="btn_save_cols"):
             st.session_state.feature_cols = feature_cols
             chosen_target = None if target_col == "Aucune" else target_col
             st.session_state.target_col = chosen_target
-            st.success("✅ Sélection enregistrée.")
+            st.success("Sélection enregistrée.")
             # Avertir si la cible choisie est numérique et pourrait avoir été normalisée
             if chosen_target and chosen_target in df_work.select_dtypes(include=[np.number]).columns:
                 st.warning(
-                    f"⚠️ **{chosen_target}** est une colonne numérique. "
+                    f"**{chosen_target}** est une colonne numérique. "
                     "Si vous avez appliqué une normalisation avant de définir la cible, "
                     "rechargez le dataset et refaites le prétraitement dans l'ordre recommandé : "
                     "nettoyage → sélection de la cible → normalisation des features."
@@ -341,18 +787,18 @@ if page == "📂 Prétraitement":
 # VOLET 2 – CLUSTERING
 # ===========================================================================
 
-elif page == "🔵 Clustering":
-    st.markdown('<p class="main-title">🔵 Volet 2 · Clustering</p>', unsafe_allow_html=True)
+elif page == "Clustering":
+    st.markdown('<div class="page-header"><h1 class="page-title">Clustering</h1><p class="page-subtitle">K-Means · K-Medoids · DBSCAN · AGNES · DIANA</p><div class="title-bar"></div></div>', unsafe_allow_html=True)
 
     df_work = st.session_state.df_clean
     feature_cols = st.session_state.feature_cols
 
     if df_work is None:
-        st.warning("⚠️ Chargez et préparez un dataset dans le volet Prétraitement.")
+        st.warning("Chargez et préparez un dataset dans le volet Prétraitement.")
         st.stop()
 
     if not feature_cols:
-        st.warning("⚠️ Sélectionnez des features dans le volet Prétraitement (section Sélection).")
+        st.warning("Sélectionnez des features dans le volet Prétraitement (section Sélection).")
         st.stop()
 
     # Préparer X — exclure la variable cible pour ne pas biaiser le clustering
@@ -365,7 +811,7 @@ elif page == "🔵 Clustering":
         st.error("Aucune feature numérique valide (après exclusion de la cible).")
         st.stop()
     if target_col_clust and target_col_clust in feature_cols:
-        st.info(f"ℹ️ La variable cible **{target_col_clust}** est automatiquement exclue des features de clustering.")
+        st.info(f"La variable cible **{target_col_clust}** est automatiquement exclue des features de clustering.")
 
     X_all = df_work[valid_feat].dropna().values
     if len(X_all) < 3:
@@ -377,7 +823,7 @@ elif page == "🔵 Clustering":
     # -----------------------------------------------------------------------
     # 2.1 Courbe d'Elbow
     # -----------------------------------------------------------------------
-    with st.expander("📈 Courbe d'Elbow (K-Means / K-Medoids)", expanded=True):
+    with st.expander("Courbe d'Elbow (K-Means / K-Medoids)", expanded=True):
         col1, col2, col3 = st.columns(3)
         k_min = col1.number_input("k minimum", min_value=2, max_value=10, value=2, key="elbow_kmin")
         k_max = col2.number_input("k maximum", min_value=3, max_value=20, value=10, key="elbow_kmax")
@@ -398,7 +844,7 @@ elif page == "🔵 Clustering":
     # -----------------------------------------------------------------------
     # 2.2 Lancer un algorithme de clustering
     # -----------------------------------------------------------------------
-    with st.expander("⚙️ Paramétrage & Exécution", expanded=True):
+    with st.expander("Paramétrage & Exécution", expanded=True):
         algo = st.selectbox(
             "Algorithme de clustering",
             ["K-Means", "K-Medoids", "DBSCAN", "AGNES", "DIANA"],
@@ -425,11 +871,11 @@ elif page == "🔵 Clustering":
 
         if algo in ("K-Medoids", "DIANA") and len(X_all) > 800:
             st.warning(
-                f"⚠️ **{algo}** a une complexité O(n²). "
+                f"**{algo}** a une complexité O(n²). "
                 f"Avec {len(X_all)} observations, le calcul peut prendre plusieurs minutes."
             )
 
-        if st.button("🚀 Lancer le clustering", key="btn_run_cluster"):
+        if st.button("Lancer le clustering", key="btn_run_cluster"):
             with st.spinner(f"Exécution de {algo}…"):
                 try:
                     if algo == "K-Means":
@@ -491,23 +937,59 @@ elif page == "🔵 Clustering":
 # VOLET 3 – CLASSIFICATION
 # ===========================================================================
 
-elif page == "🎯 Classification":
-    st.markdown('<p class="main-title">🎯 Volet 3 · Classification Supervisée</p>', unsafe_allow_html=True)
+elif page == "Classification":
+    st.markdown('<div class="page-header"><h1 class="page-title">Classification</h1><p class="page-subtitle">KNN · Arbre · Random Forest · SVM · Régression · Naive Bayes</p><div class="title-bar"></div></div>', unsafe_allow_html=True)
 
     df_work = st.session_state.df_clean
     feature_cols = st.session_state.feature_cols
     target_col = st.session_state.target_col
 
     if df_work is None:
-        st.warning("⚠️ Chargez et préparez un dataset dans le volet Prétraitement.")
+        st.warning("Chargez et préparez un dataset dans le volet Prétraitement.")
         st.stop()
 
+    all_cols_class = list(df_work.columns)
+    num_cols_class = list(df_work.select_dtypes(include=[np.number]).columns)
+
+    needs_class_setup = not feature_cols or not target_col
+    with st.expander("Configuration des données pour la classification", expanded=needs_class_setup):
+        st.caption("Choisissez ici les colonnes explicatives et la variable cible si elles ne sont pas encore définies.")
+
+        default_target = target_col if target_col in all_cols_class else "Aucune"
+        target_choice = st.selectbox(
+            "Variable cible",
+            ["Aucune"] + all_cols_class,
+            index=(["Aucune"] + all_cols_class).index(default_target),
+            key="class_target_select",
+        )
+
+        effective_target = None if target_choice == "Aucune" else target_choice
+        default_features = [
+            col for col in feature_cols
+            if col in num_cols_class and col != effective_target
+        ] if feature_cols else [
+            col for col in num_cols_class if col != effective_target
+        ]
+
+        feature_choices = st.multiselect(
+            "Features numériques",
+            [col for col in num_cols_class if col != effective_target],
+            default=default_features,
+            key="class_feat_select",
+        )
+
+        if st.button("Enregistrer la configuration", key="btn_save_class_setup"):
+            st.session_state.target_col = effective_target
+            st.session_state.feature_cols = feature_choices
+            st.success("Configuration de classification enregistrée.")
+            st.rerun()
+
     if not feature_cols:
-        st.warning("⚠️ Sélectionnez des features dans le volet Prétraitement.")
+        st.warning("Sélectionnez des features dans la configuration ci-dessus.")
         st.stop()
 
     if not target_col:
-        st.warning("⚠️ Sélectionnez une variable cible dans le volet Prétraitement.")
+        st.warning("Sélectionnez une variable cible dans la configuration ci-dessus.")
         st.stop()
 
     st.info(f"Features : **{len(feature_cols)}** colonnes  |  Cible : **{target_col}**")
@@ -515,7 +997,7 @@ elif page == "🎯 Classification":
     # -----------------------------------------------------------------------
     # 3.1 Partitionnement
     # -----------------------------------------------------------------------
-    with st.expander("✂️ Partitionnement Train / Test", expanded=True):
+    with st.expander("Partitionnement Train / Test", expanded=True):
         test_size = st.slider("Proportion des données de test (%)", 10, 40, 20, key="test_size") / 100
         try:
             X_train, X_test, y_train, y_test, le, valid_features = prepare_classification_data(
@@ -535,7 +1017,7 @@ elif page == "🎯 Classification":
     # -----------------------------------------------------------------------
     # 3.2 Un seul modèle en détail
     # -----------------------------------------------------------------------
-    with st.expander("🤖 Entraîner & Évaluer un modèle", expanded=True):
+    with st.expander("Entraîner & Évaluer un modèle", expanded=True):
         model_name = st.selectbox("Modèle", list(MODELS.keys()), key="single_model")
 
         # Paramètres ajustables selon le modèle
@@ -550,7 +1032,7 @@ elif page == "🎯 Classification":
         elif model_name == "SVM":
             custom_params["kernel"] = st.selectbox("Noyau", ["rbf", "linear", "poly"], key="svm_ker")
 
-        if st.button("▶️ Entraîner le modèle", key="btn_train_single"):
+        if st.button("Entraîner le modèle", key="btn_train_single"):
             with st.spinner(f"Entraînement de {model_name}…"):
                 try:
                     model = train_model(model_name, X_train, y_train, custom_params)
@@ -574,7 +1056,7 @@ elif page == "🎯 Classification":
                         st.pyplot(fig_bar)
 
                     # Rapport détaillé
-                    with st.expander("📄 Rapport de classification complet"):
+                    with st.expander("Rapport de classification complet"):
                         st.text(metrics["report"])
 
                     # Visualisations spécifiques
@@ -594,14 +1076,14 @@ elif page == "🎯 Classification":
     # -----------------------------------------------------------------------
     # 3.3 Comparaison de plusieurs modèles
     # -----------------------------------------------------------------------
-    with st.expander("📊 Comparaison de tous les modèles"):
+    with st.expander("Comparaison des modèles"):
         models_to_compare = st.multiselect(
             "Modèles à comparer",
             list(MODELS.keys()),
             default=list(MODELS.keys()),
             key="compare_models",
         )
-        if st.button("🔄 Lancer la comparaison", key="btn_compare"):
+        if st.button("Lancer la comparaison", key="btn_compare"):
             if not models_to_compare:
                 st.warning("Sélectionnez au moins un modèle.")
             else:
@@ -610,18 +1092,13 @@ elif page == "🎯 Classification":
                         models_to_compare, X_train, X_test, y_train, y_test, class_names
                     )
                 display_cols = ["Modèle", "Accuracy", "Precision", "Recall", "F1-Score"]
-                st.dataframe(
-                    summary_df[display_cols].style.highlight_max(
-                        subset=["Accuracy", "Precision", "Recall", "F1-Score"],
-                        color="#d4edda",
-                    ),
-                    use_container_width=True,
-                )
+                st.caption("Les meilleures valeurs de chaque métrique sont surlignées.")
+                render_comparison_table(summary_df, display_cols)
                 # Afficher les erreurs éventuelles
                 if "Erreur" in summary_df.columns:
                     errors = summary_df[summary_df["Erreur"].notna()][["Modèle", "Erreur"]]
                     if not errors.empty:
-                        st.warning("⚠️ Certains modèles ont échoué :")
+                        st.warning("Certains modèles ont échoué :")
                         for _, row in errors.iterrows():
                             st.error(f"**{row['Modèle']}** : {row['Erreur']}")
 
@@ -634,7 +1111,7 @@ elif page == "🎯 Classification":
                 valid_summary = summary_df.dropna(subset=_metric_cols)
                 if not valid_summary.empty:
                     best_row = valid_summary.sort_values("F1-Score", ascending=False).iloc[0]
-                    st.success(f"🏆 Meilleur modèle (F1-Score) : **{best_row['Modèle']}** — F1 = {best_row['F1-Score']:.4f}")
+                    st.success(f"Meilleur modèle (F1-Score) : **{best_row['Modèle']}** — F1 = {best_row['F1-Score']:.4f}")
                 else:
                     st.error("Aucun modèle n'a pu être évalué sur ce dataset.")
 

@@ -2,6 +2,7 @@
 Application principale – Interface Fouille de Données
 Lancer avec : streamlit run app.py
 """
+from __future__ import annotations
 
 import html
 

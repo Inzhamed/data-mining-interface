@@ -4,6 +4,7 @@ Algorithmes : K-Means, K-Medoids, DBSCAN, AGNES (agglomératif), DIANA (divisif)
 Évaluation  : Courbe d'Elbow (inertie), Score de Silhouette.
 Visualisation : Projection 2D via PCA.
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd

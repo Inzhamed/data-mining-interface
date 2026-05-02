@@ -29,6 +29,7 @@ from modules.clustering import (
     run_diana,
     compute_silhouette,
     elbow_curve,
+    recommend_elbow_k,
     plot_elbow,
     plot_clusters_2d,
     plot_dendrogram,
@@ -824,22 +825,39 @@ elif page == "Clustering":
     # 2.1 Courbe d'Elbow
     # -----------------------------------------------------------------------
     with st.expander("Courbe d'Elbow (K-Means / K-Medoids)", expanded=True):
-        col1, col2, col3 = st.columns(3)
-        k_min = col1.number_input("k minimum", min_value=2, max_value=10, value=2, key="elbow_kmin")
-        k_max = col2.number_input("k maximum", min_value=3, max_value=20, value=10, key="elbow_kmax")
-        elbow_algo = col3.selectbox("Algorithme", ["kmeans", "kmedoids"],
-                                     format_func=lambda x: {"kmeans": "K-Means", "kmedoids": "K-Medoids"}[x],
-                                     key="elbow_algo")
+        elbow_algo = st.selectbox(
+            "Algorithme",
+            ["kmeans", "kmedoids"],
+            format_func=lambda x: {"kmeans": "K-Means", "kmedoids": "K-Medoids"}[x],
+            key="elbow_algo",
+        )
 
         if st.button("Calculer la courbe d'Elbow", key="btn_elbow"):
-            with st.spinner("Calcul en cours…"):
-                ks, inertias = elbow_curve(X_all, range(int(k_min), int(k_max) + 1), elbow_algo)
-            if ks:
-                fig = plot_elbow(ks, inertias, "K-Means" if elbow_algo == "kmeans" else "K-Medoids")
-                st.pyplot(fig)
-                st.caption("Choisissez k au point de « coude » de la courbe.")
+            k_upper = min(10, len(X_all) - 1)
+            if k_upper < 2:
+                st.error("Pas assez d'observations pour calculer une courbe d'Elbow.")
             else:
-                st.error("Impossible de calculer la courbe d'Elbow.")
+                with st.spinner("Calcul en cours…"):
+                    ks, inertias = elbow_curve(X_all, range(2, k_upper + 1), elbow_algo)
+                if ks:
+                    fig = plot_elbow(ks, inertias, "K-Means" if elbow_algo == "kmeans" else "K-Medoids")
+                    st.pyplot(fig)
+
+                    recommended_k = recommend_elbow_k(ks, inertias)
+                    if recommended_k is not None:
+                        recommended_k = min(max(recommended_k, 2), min(20, len(X_all) - 1))
+                        st.session_state.k_val = recommended_k
+                        st.success(
+                            f"k recommandé : **{recommended_k}**. "
+                            f"Le curseur de k dans la section suivante a été mis à jour."
+                        )
+
+                    st.caption(
+                        f"Courbe calculée automatiquement pour k de {ks[0]} à {ks[-1]}. "
+                        "Choisissez ensuite le k final dans la section suivante."
+                    )
+                else:
+                    st.error("Impossible de calculer la courbe d'Elbow.")
 
     # -----------------------------------------------------------------------
     # 2.2 Lancer un algorithme de clustering

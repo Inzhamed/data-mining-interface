@@ -238,6 +238,43 @@ def elbow_curve(X: np.ndarray, k_range: range, algorithm: str = "kmeans"):
     return ks, inertias
 
 
+def recommend_elbow_k(ks: list, inertias: list) -> int | None:
+    """
+    Propose un k via une heuristique simple de "coude".
+    Le point retenu est celui dont la distance à la droite reliant
+    le premier et le dernier point de la courbe est maximale.
+    """
+    if len(ks) < 3 or len(ks) != len(inertias):
+        return None
+
+    x = np.asarray(ks, dtype=float)
+    y = np.asarray(inertias, dtype=float)
+
+    x_span = x.max() - x.min()
+    y_span = y.max() - y.min()
+    if np.isclose(x_span, 0.0) or np.isclose(y_span, 0.0):
+        return None
+
+    x_norm = (x - x.min()) / x_span
+    y_norm = (y - y.min()) / y_span
+
+    start = np.array([x_norm[0], y_norm[0]])
+    end = np.array([x_norm[-1], y_norm[-1]])
+    line_vec = end - start
+    line_norm = np.linalg.norm(line_vec)
+    if np.isclose(line_norm, 0.0):
+        return None
+
+    points = np.column_stack([x_norm, y_norm])
+    distances = np.abs(
+        (points[:, 0] - start[0]) * line_vec[1]
+        - (points[:, 1] - start[1]) * line_vec[0]
+    ) / line_norm
+
+    elbow_idx = int(np.argmax(distances[1:-1])) + 1
+    return int(ks[elbow_idx])
+
+
 # ---------------------------------------------------------------------------
 # Visualisation
 # ---------------------------------------------------------------------------
